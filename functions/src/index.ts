@@ -8,6 +8,42 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+async function findAccount(id: any) {
+    const accountRef = db.collection('accounts').doc(id);
+    const accountSnapshot = await accountRef.get();
+
+    if (!accountSnapshot.exists) {
+        return false; // No account found
+    }
+
+    const accountData = accountSnapshot.data();
+
+    const subcollections = await accountRef.listCollections();
+    const subcollectionData = await Promise.all(subcollections.map(async (subcollection) => {
+        const documents = await subcollection.get();
+        return {
+        [subcollection.id]: documents.docs.map((doc) => doc.data()),
+        };
+    }));
+
+    return {
+        ...accountData,
+        ...subcollectionData.reduce((acc, curr) => ({ ...acc, ...curr }), {}),
+    };
+}
+
+export const getAccount = functions.https.onRequest(async (req, res) => {
+    const id = req.query.id;
+
+    const result = await findAccount(id);
+    if (result) {
+        res.json(result);
+    } else {
+        res.status(404).send('Account not found');
+    }
+});
+
+
 async function findClient(id: any, apartment: any) {
 
     const querySnapshot = await db.collection('clients').where('cpf_cnpj', '==', id).where('apartment', '==', apartment).get();
