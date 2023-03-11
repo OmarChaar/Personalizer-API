@@ -96,20 +96,34 @@ export const updateClients = functions.firestore
     .document('accounts/{accountId}/clients/{clientId}')
     .onWrite(async (change, context) => {
 
-        const clientId = context.params.clientId;
-        
-        const updatedData = change.after.data();
+    const clientId = context.params.clientId;
+    
+    const updatedData = change.after.data();
 
-        const clientDocRef = db.collection('clients').doc(clientId);
-        const clientDoc = await clientDocRef.get();
+    const clientDocRef = db.collection('clients').doc(clientId);
+    const clientDoc = await clientDocRef.get();
 
-        if (!clientDoc.exists) {
-            await clientDocRef.set({ clientId, ...updatedData });
-        } 
-        else {
-            if(updatedData) {
-                await clientDocRef.update(updatedData);
-            }
-         
+    if (!clientDoc.exists) {
+        await clientDocRef.set({ clientId, ...updatedData });
+    } 
+    else {
+        if(updatedData) {
+            await clientDocRef.update(updatedData);
         }
+        
+    }
+});
+
+export const deleteClients = functions.firestore
+    .document('accounts/{accountId}/clients/{clientId}')
+    .onDelete(async (snapshot, context) => {
+
+    const clientId = context.params.clientId;
+
+    const clientDocRef = db.collection('clients').doc(clientId);
+    const clientDoc = await clientDocRef.get();
+
+    if (clientDoc.exists) {
+        await clientDocRef.delete();
+    } 
 });
