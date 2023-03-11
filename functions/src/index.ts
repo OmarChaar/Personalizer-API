@@ -90,6 +90,55 @@ app.get('/getSections', async (req, res) => {
     }
 });
 
+function setDate() {
+    const date = new Date();
+    const dateString = date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: true,
+    });
+
+    return dateString;
+}
+
+app.post('/saveClient', async (req, res) => {
+    try {
+        const { client } = req.body;
+        const clientRef = db.collection('clients').doc(client.id);
+
+       
+
+        client.date_modified = setDate();
+
+        const clientDoc = await clientRef.get();
+        if (!clientDoc.exists) {
+            res.status(404).send('Client not found.');
+            return;
+        }
+        else {
+            const id = client.id;
+            await clientRef.set({ id, ...client });
+
+            const accountId = client.clientOf;
+
+            const accountRef = db.collection('accounts').doc(accountId).collection('clients').doc(client.id);
+            await accountRef.set({ id, ...client});
+
+
+            res.send({success: true});
+        }
+
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error.');
+    }
+});
+  
 export const api = functions.https.onRequest(app);
 
 export const updateClients = functions.firestore
