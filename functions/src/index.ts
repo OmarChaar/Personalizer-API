@@ -100,6 +100,7 @@ function setDate() {
       minute: 'numeric',
       second: 'numeric',
       hour12: true,
+      timeZone: 'America/Sao_Paulo'
     });
 
     return dateString;
